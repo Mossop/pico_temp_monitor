@@ -1,0 +1,5 @@
+#! /bin/sh
+
+DEVICE=$(ls /dev/cu.usbmodem*)
+
+mpremote connect ${DEVICE}

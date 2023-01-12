@@ -1,0 +1,8 @@
+#! /bin/sh
+
+DEVICE=$(ls /dev/cu.usbmodem*)
+
+mpremote connect ${DEVICE} fs cp config.json :
+cd src
+mpremote connect ${DEVICE} fs cp -r . :
+mpremote connect ${DEVICE}
