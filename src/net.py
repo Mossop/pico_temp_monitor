@@ -55,6 +55,6 @@ def update_time(network, attempts = 1):
             return
 
         attempts -= 1
-        time.sleep_ms(1000)
+        time.sleep(1)
 
     raise Exception("Failed to update time in the required number of attempts")
