@@ -1,10 +1,8 @@
 import time
-import network
-import urequests
+import wifi
 
-from machine import RTC, unique_id
-from config import CONFIG
-from log import Logger
+from .config import CONFIG
+from .log import Logger
 
 
 log = Logger("MEASURE")
@@ -15,13 +13,13 @@ TAGS = {}
 def build_tags():
     import os
     import binascii
+    import microcontroller
     machine_parts = os.uname().machine.split(" with ")
 
-    wlan = network.WLAN(network.STA_IF)
-    mac =  binascii.hexlify(wlan.config("mac")).decode()
-    TAGS["machine_id"] = binascii.hexlify(unique_id()).decode()
+    mac =  binascii.hexlify(wifi.radio.mac_address).decode()
     TAGS["device"] = machine_parts[0]
-    TAGS["chip"] = machine_parts[1] if len(machine_parts) > 1 else "unknown"
+    TAGS["chip"] = machine_parts[1].upper() if len(machine_parts) > 1 else "unknown"
+    TAGS["machine_id"] = binascii.hexlify(microcontroller.cpu.uid).decode()
     TAGS["mac"] = ":".join([mac[i:i+2] for i in range(0, len(mac), 2)])
 
 
@@ -68,15 +66,12 @@ class Measurement:
         return "%s %s %s\n" % (",".join(tags), ",".join(fields), self.timestamp)
 
 
-def upload(measurements):
+def upload(measurements, network):
     data = serialized(measurements)
 
     log.trace("Upload")
-    response = urequests.post(URL, data=data, headers={
+    with network.session.post(URL, data=data, headers={
         "Authorization": "Token %s" % CONFIG.token
-    })
-
-    response.close()
-
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception("Failed to upload data: %d %s\n%s" % (response.status_code, response.reason, response.text))
+    }) as response:
+        if response.status_code < 200 or response.status_code >= 300:
+            raise Exception("Failed to upload data: %d %s\n%s" % (response.status_code, response.reason, response.text))

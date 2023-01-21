@@ -1,8 +1,8 @@
 #! /bin/sh
 
-DEVICE=$(ls /dev/cu.usbmodem*)
+DEVICE=$(ls /dev/tty.usbmodem*)
+DIR=/Volumes/CIRCUITPY
 
-mpremote connect ${DEVICE} fs cp config.json :
-cd src
-mpremote connect ${DEVICE} fs cp -r . :
-mpremote connect ${DEVICE}
+cp config.json code.py ${DIR}
+mkdir -p ${DIR}/bin
+rsync -r --delete src/ ${DIR}/bin/

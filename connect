@@ -1,5 +1,5 @@
 #! /bin/sh
 
-DEVICE=$(ls /dev/cu.usbmodem*)
+DEVICE=$(ls /dev/tty.usbmodem*)
 
-mpremote connect ${DEVICE}
+screen ${DEVICE}

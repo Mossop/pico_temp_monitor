@@ -1,9 +1,13 @@
-import network
-import ntptime
 import time
+import wifi
+from socketpool import SocketPool
+from rtc import RTC
+from adafruit_ntp import NTP
+from adafruit_requests import Session
+import ssl
 
-from log import Logger
-from config import CONFIG
+from .log import Logger
+from .config import CONFIG
 
 
 log = Logger("NET")
@@ -13,24 +17,26 @@ class Network:
     def __init__(self, timeout):
         self.timeout = timeout
 
-
     def __enter__(self):
-        self.wlan = network.WLAN(network.STA_IF)
-        self.wlan.active(True)
-        self.wlan.connect(CONFIG.ssid, CONFIG.password)
+        now = time.monotonic()
+        end = now + self.timeout
 
-        while self.timeout != 0 and self.wlan.status() < 3:
-            self.timeout -= 1
-            time.sleep_ms(1000)
-
-        if self.wlan.status() < 3:
-            raise Exception("Failed to connect, status %d" % self.wlan.status())
-
-        log.trace("Connected")
+        wifi.radio.enabled = True
+        while True:
+            try:
+                wifi.radio.connect(CONFIG.ssid, CONFIG.password, timeout=(end - now))
+                log.trace("Connected")
+                self.socket_pool = SocketPool(wifi.radio)
+                self.session = Session(self.socket_pool, ssl.create_default_context())
+                return self
+            except Exception as ex:
+                now = time.monotonic()
+                if now >= end:
+                    raise ex
 
     def __exit__(self, ex_type, ex, tb):
-        self.wlan.disconnect()
-        self.wlan.active(False)
+        wifi.radio.stop_station()
+        wifi.radio.enabled = False
         log.trace("Disconnected")
 
 
@@ -38,10 +44,13 @@ def connect(timeout = 20):
     return Network(timeout)
 
 
-def update_time(attempts = 1):
+def update_time(network, attempts = 1):
+    rtc = RTC()
+    ntp = NTP(network.socket_pool, tz_offset=0)
+
     while attempts > 0:
         with log.safe("Failed to update time"):
-            ntptime.settime()
+            rtc.datetime = ntp.datetime
             log.trace("Time updated")
             return
 

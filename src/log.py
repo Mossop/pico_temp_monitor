@@ -1,5 +1,3 @@
-import sys
-
 class Logger:
     def __init__(self, id):
         self.id = id
@@ -33,6 +31,7 @@ class Safe:
 
     def __exit__(self, exc_type, exc, tb):
         if exc_type is not None:
+            from traceback import print_exception
             print("EXCEPTION %s: %s" % (self.logger.id, self.message))
-            sys.print_exception(exc)
+            print_exception(exc)
         return True
