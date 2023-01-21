@@ -1,8 +1,9 @@
 import time
 import board
 import microcontroller
+from busio import I2C
 from supervisor import runtime
-from analogio import AnalogIn
+from adafruit_htu31d import HTU31D
 
 from .measurements import Measurement, TAGS, upload, build_tags
 from .net import connect, update_time
@@ -21,16 +22,17 @@ def sleep_s(timeout):
 
 
 def measurement(measurements):
-    for pin in [board.A0, board.A1, board.A2, board.A3]:
-        with log.safe("Failed to measure adc from %s" % str(pin)):
-            with AnalogIn(pin) as adc:
-                raw = adc.value
-                reading = Measurement("pico_adc")
-                reading.tag("pin", str(pin))
-                reading.value("raw", raw)
-                reading.value("volts", raw * (adc.reference_voltage / 65535))
+    with log.safe("Failed to take measurements"):
+        with I2C(board.GP9, board.GP8) as i2c:
+            ht = HTU31D(i2c)
+            ht.humidity_resolution = "0.014%"
+            ht.temp_resolution = "0.012"
+            temp, humidity = ht.measurements
+            reading = Measurement("htu31d")
+            reading.value("temp", temp)
+            reading.value("humidity", humidity)
 
-                measurements.append(reading)
+            measurements.append(reading)
 
 
 def monitor(measurements):
