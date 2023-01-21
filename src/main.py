@@ -1,7 +1,7 @@
 import machine
 import time
 
-from measurements import serialized, Measurement, TAGS, upload
+from measurements import serialized, Measurement, TAGS, upload, build_tags
 from net import connect, update_time
 from log import Logger
 
@@ -133,18 +133,20 @@ def set_time():
 
 def main():
     print("Startup. Watchdog timeout %d. Measurement timeout %d" % (WATCHDOG_TIMEOUT, MEASUREMENT_INTERVAL))
-    print("Tags:")
-    for k in TAGS.keys():
-        print("  %s: %s" % (k, TAGS[k]))
-    print()
 
     # Make sure we get an accurate time before running the loop
     try:
         set_time()
     except Exception:
         # Failed to get the time, try rebooting in case there is a hardware issue
-        # machine.reset()
+        machine.reset()
         return
+
+    build_tags()
+    print("Tags:")
+    for k in TAGS.keys():
+        print("  %s: %s" % (k, TAGS[k]))
+    print()
 
     main_loop()
 

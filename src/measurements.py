@@ -9,6 +9,8 @@ from log import Logger
 
 log = Logger("MEASURE")
 
+TAGS = {}
+
 
 def build_tags():
     import os
@@ -17,13 +19,10 @@ def build_tags():
 
     wlan = network.WLAN(network.STA_IF)
     mac =  binascii.hexlify(wlan.config("mac")).decode()
-    return {
-        "machine_id": binascii.hexlify(unique_id()).decode(),
-        "device": machine_parts[0],
-        "chip": machine_parts[1] if len(machine_parts) > 1 else "unknown",
-        "mac": ":".join([mac[i:i+2] for i in range(0, len(mac), 2)]),
-    }
-TAGS = build_tags()
+    TAGS["machine_id"] = binascii.hexlify(unique_id()).decode()
+    TAGS["device"] = machine_parts[0]
+    TAGS["chip"] = machine_parts[1] if len(machine_parts) > 1 else "unknown"
+    TAGS["mac"] = ":".join([mac[i:i+2] for i in range(0, len(mac), 2)])
 
 
 URL = "https://%s/api/v2/write?bucket=%s&org=%s&precision=s" % (CONFIG.host, CONFIG.bucket, CONFIG.organisation)
