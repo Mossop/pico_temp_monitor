@@ -2,4 +2,5 @@ adafruit_register
 adafruit_bus_device
 adafruit_requests
 adafruit_htu31d
+adafruit_htu21d
 adafruit_ntp

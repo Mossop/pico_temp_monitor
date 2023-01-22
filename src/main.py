@@ -4,6 +4,7 @@ import microcontroller
 from busio import I2C
 from supervisor import runtime
 from adafruit_htu31d import HTU31D
+from adafruit_htu21d import HTU21D
 
 from .measurements import Measurement, TAGS, upload, build_tags
 from .net import connect, update_time
@@ -29,13 +30,23 @@ class Main:
         self.htu31d.humidity_resolution = "0.014%"
         self.htu31d.temp_resolution = "0.012"
 
+        i2c = I2C(board.GP7, board.GP6)
+        self.htu21d = HTU21D(i2c)
+        self.htu21d.temp_rh_resolution = 0
+
     def measurement(self):
         with log.safe("Failed to take measurements"):
-            temp, humidity = self.htu31d.measurements
             reading = Measurement("htu31d")
             reading.tag("serial", str(self.htu31d.serial_number))
+            temp, humidity = self.htu31d.measurements
             reading.value("temperature", temp)
-            reading.value("humidity", humidity)
+            reading.value("relative_humidity", humidity)
+
+            self.measurements.append(reading)
+
+            reading = Measurement("htu21d")
+            reading.value("temperature", self.htu21d.temperature)
+            reading.value("relative_humidity", self.htu21d.relative_humidity)
 
             self.measurements.append(reading)
 
