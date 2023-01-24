@@ -25,30 +25,42 @@ class Main:
     def __init__(self):
         self.measurements = []
         self.failures = 0
-        i2c = I2C(board.GP9, board.GP8)
-        self.htu31d = HTU31D(i2c)
-        self.htu31d.humidity_resolution = "0.014%"
-        self.htu31d.temp_resolution = "0.012"
 
-        i2c = I2C(board.GP7, board.GP6)
-        self.htu21d = HTU21D(i2c)
-        self.htu21d.temp_rh_resolution = 0
+        with log.safe("Failed to initialise htu31d"):
+            i2c = I2C(board.GP9, board.GP8)
+            self.htu31d = HTU31D(i2c)
+            self.htu31d.humidity_resolution = "0.014%"
+            self.htu31d.temp_resolution = "0.012"
+
+        with log.safe("Failed to initialise htu21d"):
+            i2c = I2C(board.GP7, board.GP6)
+            self.htu21d = HTU21D(i2c)
+            self.htu21d.temp_rh_resolution = 0
 
     def measurement(self):
-        with log.safe("Failed to take measurements"):
-            reading = Measurement("htu31d")
-            reading.tag("serial", str(self.htu31d.serial_number))
-            temp, humidity = self.htu31d.measurements
-            reading.value("temperature", temp)
-            reading.value("relative_humidity", humidity)
+        with log.safe("Failed to take measurements from htu31d"):
+            try:
+                reading = Measurement("htu31d")
+                reading.tag("serial", str(self.htu31d.serial_number))
+                temp, humidity = self.htu31d.measurements
+                reading.value("temperature", temp)
+                reading.value("relative_humidity", humidity)
 
-            self.measurements.append(reading)
+                self.measurements.append(reading)
+            except:
+                self.failures = self.failures + 1
+                raise
 
-            reading = Measurement("htu21d")
-            reading.value("temperature", self.htu21d.temperature)
-            reading.value("relative_humidity", self.htu21d.relative_humidity)
+        with log.safe("Failed to take measurements from htu21d"):
+            try:
+                reading = Measurement("htu21d")
+                reading.value("temperature", self.htu21d.temperature)
+                reading.value("relative_humidity", self.htu21d.relative_humidity)
 
-            self.measurements.append(reading)
+                self.measurements.append(reading)
+            except:
+                self.failures = self.failures + 1
+                raise
 
     def monitor(self):
         with log.safe("Failed to monitor"):
