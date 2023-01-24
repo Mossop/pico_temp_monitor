@@ -1,0 +1,4 @@
+adafruit_requests==1.12.12
+adafruit_htu31d==1.1.10
+adafruit_htu21d==0.11.11
+adafruit_ntp==3.0.8

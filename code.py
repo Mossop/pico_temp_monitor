@@ -1,2 +1,2 @@
-from bin import main
+from src import main
 main()
